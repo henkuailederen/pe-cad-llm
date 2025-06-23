@@ -1,0 +1,23 @@
+flask>=2.0.0
+flask-cors>=3.0.0
+
+
+pyyaml>=6.0
+jinja2>=3.0.0
+
+
+numpy>=1.21.0
+scipy>=1.7.0
+shapely>=1.8.0
+
+# HTTP requests
+requests>=2.25.0
+urllib3>=1.26.0
+
+# 3D modeling (CadQuery requires separate installation)
+# cadquery>=2.1.0  # Please refer to official documentation for CadQuery installation
+
+# Development tools (optional)
+# pytest>=6.0.0
+# black>=21.0.0
+# flake8>=3.9.0 

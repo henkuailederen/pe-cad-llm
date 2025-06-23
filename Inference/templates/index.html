@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 代码生成器</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr 400px;
+            min-height: 700px;
+            gap: 0;
+        }
+        
+        .input-section {
+            padding: 20px;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+        
+        .code-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        
+        .viewer-section {
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn-primary, .btn-secondary, .btn-success, .btn-warning {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white !important;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529 !important;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .code-container {
+            position: relative;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #2d3748;
+            overflow: hidden;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .viewer-container {
+            position: relative;
+            height: 500px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #ffffff;
+            overflow: hidden;
+        }
+        
+        .container-header {
+            background: #1a202c;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #4a5568;
+        }
+        
+        .container-title {
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .container-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background: #4facfe;
+            color: white !important;
+            border: none;
+            padding: 10px 18px;
+            min-width: 90px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .action-btn:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+        
+        .action-btn.success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+        
+        .action-btn.success:hover {
+            filter: brightness(1.1);
+        }
+        
+        .code-content {
+            height: calc(100% - 50px);
+            overflow: auto;
+            padding: 20px;
+        }
+        
+        .viewer-content {
+            height: calc(100% - 50px);
+            position: relative;
+        }
+        
+        .code-content pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+        
+        .code-content code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #e53e3e;
+            margin-top: 15px;
+        }
+        
+        .success {
+            color: #38a169;
+            background: #c6f6d5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #38a169;
+            margin-top: 15px;
+        }
+        
+        .info {
+            color: #3182ce;
+            background: #bee3f8;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3182ce;
+            margin-top: 15px;
+        }
+        
+        .placeholder-text {
+            color: #a0aec0;
+            text-align: center;
+            padding: 50px 20px;
+        }
+        
+        .template-info {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .template-info h4 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .template-info p {
+            color: #718096;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        
+        #viewer3d {
+            width: 100%;
+            height: 100%;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .input-section,
+            .code-section {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            
+            .button-group {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .btn {
+                flex: 1;
+                min-width: 140px;
+            }
+            
+            .code-container {
+                min-height: 300px;
+            }
+            
+            .viewer-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cube"></i> Power Module CAD Builder</h1>
+            <p>AI-Powered 3D CAD Model Generation for Power Modules</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- 输入区域 -->
+            <div class="input-section">
+                <div class="template-info">
+                    <h4><i class="fas fa-info-circle"></i> Function Description</h4>
+                    <p>Input descriptive text for power device functionality to quickly build 3D CAD models of power modules. The system automatically selects the appropriate template and generates Python code for model construction.</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="prompt-input">
+                        <i class="fas fa-edit"></i> Device Description
+                    </label>
+                    <textarea 
+                        id="prompt-input" 
+                        placeholder="Please describe the power device functionality you need...&#10;&#10;Examples:&#10;Create a half-bridge module with IGBT and FWD, width 15mm, length 20mm, ceramic substrate thickness 0.38mm, IGBT size 8x8mm&#10;&#10;Generate a 3P6P configuration power module with substrate size 44x48mm&#10;&#10;Design a module containing 3 IGBTs and 3 FWDs with copper thickness 0.2mm"
+                    ></textarea>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" id="generate-btn">
+                        <i class="fas fa-magic"></i> Generate Code
+                    </button>
+                    <button class="btn btn-warning" id="check-conn-btn">
+                        <i class="fas fa-wifi"></i> Check Connection
+                    </button>
+                    <button class="btn btn-secondary" id="clear-btn">
+                        <i class="fas fa-eraser"></i> Clear All
+                    </button>
+                </div>
+                
+                <div id="message-area"></div>
+            </div>
+            
+            <!-- 代码显示区域 -->
+            <div class="code-section">
+                <div class="code-container">
+                    <div class="container-header">
+                        <span class="container-title">
+                            <i class="fab fa-python"></i> Generated Python Code
+                        </span>
+                        <div class="container-actions">
+                            <button class="action-btn success" id="run-code-btn" style="display: none;">
+                                <i class="fas fa-play"></i> Run
+                            </button>
+                            <button class="action-btn" id="refresh-btn" style="display: none;">
+                                <i class="fas fa-redo"></i> Refresh
+                            </button>
+                            <button class="action-btn" id="copy-btn" style="display: none;">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="code-content" id="code-content">
+                        <div class="placeholder-text">
+                            <i class="fas fa-code" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 新增：API响应显示区域 (已隐藏) -->
+                <div id="api-response-container" style="margin-top: 20px; display: none;">
+                    <h4 style="color: #333; margin-bottom: 10px;">
+                        <i class="fas fa-satellite-dish"></i> API Response (Override Data)
+                    </h4>
+                    <pre id="api-response-content" style="background: #e2e8f0; padding: 15px; border-radius: 8px; font-size: 0.8rem; white-space: pre-wrap; word-wrap: break-word; min-height: 100px;">
+                        <div class="placeholder-text" style="font-size: 0.8rem; color: #718096;">Waiting for API response...</div>
+                    </pre>
+                </div>
+            </div>
+            
+            <!-- 3D查看器区域 -->
+            <div class="viewer-section">
+                <div class="viewer-container">
+                    <div class="container-header">
+                        <span class="container-title">
+                            <i class="fas fa-cube"></i> 3D Model Viewer
+                        </span>
+                        <div class="container-actions">
+                            <button class="action-btn success" id="download-btn" style="display: none;">
+                                <i class="fas fa-download"></i> Download STL
+                            </button>
+                        </div>
+                    </div>
+                    <div class="viewer-content">
+                        <div id="viewer3d">
+                            <div class="placeholder-text">
+                                <i class="fas fa-cube" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载必要的库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        class CodeGenerator {
+            constructor() {
+                this.initializeElements();
+                this.bindEvents();
+                this.lastPrompt = '';
+                this.lastGeneratedCode = '';
+            }
+            
+            initializeElements() {
+                this.promptInput = document.getElementById('prompt-input');
+                this.generateBtn = document.getElementById('generate-btn');
+                this.clearBtn = document.getElementById('clear-btn');
+                this.copyBtn = document.getElementById('copy-btn');
+                this.refreshBtn = document.getElementById('refresh-btn');
+                this.runCodeBtn = document.getElementById('run-code-btn');
+                this.codeContent = document.getElementById('code-content');
+                this.messageArea = document.getElementById('message-area');
+                this.viewerContent = document.getElementById('viewer3d');
+                this.checkConnBtn = document.getElementById('check-conn-btn');
+                this.downloadBtn = document.getElementById('download-btn');
+                this.apiResponseContainer = document.getElementById('api-response-container');
+                this.apiResponseContent = document.getElementById('api-response-content');
+            }
+            
+            bindEvents() {
+                this.generateBtn.addEventListener('click', () => this.generateCode());
+                this.clearBtn.addEventListener('click', () => this.clearAll());
+                this.copyBtn.addEventListener('click', () => this.copyCode());
+                this.refreshBtn.addEventListener('click', () => this.refreshCode());
+                this.runCodeBtn.addEventListener('click', () => this.runCurrentCode());
+                this.checkConnBtn.addEventListener('click', () => this.checkApiConnection());
+                
+                // 回车键快捷生成
+                this.promptInput.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'Enter') {
+                        this.generateCode();
+                    }
+                });
+            }
+            
+            async generateCode() {
+                const prompt = this.promptInput.value.trim();
+                
+                if (!prompt) {
+                    this.showMessage('请输入描述信息', 'error');
+                    return;
+                }
+                
+                this.lastPrompt = prompt;
+                this.setLoading(true);
+                this.clearMessage();
+                
+                try {
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // 已隐藏API response显示
+                    // if (data.override_data) {
+                    //     this.displayApiResponse(data.override_data);
+                    // }
+                    
+                    if (data.success) {
+                        this.lastGeneratedCode = data.python_code;
+                        this.displayCode(data.python_code);
+                        this.showMessage('代码生成成功！', 'success');
+                        
+                        // 显示执行和CQ-editor按钮
+                        this.runCodeBtn.style.display = 'block';
+                        this.copyBtn.style.display = 'block';
+                    } else {
+                        this.showMessage('生成失败: ' + data.error, 'error');
+                        // 如果代码生成失败，但有API数据，代码区域依然显示占位符
+                        if (data.override_data && !data.python_code) {
+                            this.displayCode(null); // 传入null来显示占位符
+                        }
+                    }
+                } catch (error) {
+                    this.showMessage('网络错误: ' + error.message, 'error');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+            
+            async runCurrentCode() {
+                if (!this.lastGeneratedCode) {
+                    this.showMessage('没有可运行的代码', 'error');
+                    return;
+                }
+                
+                this.setRunButtonLoading(true, '正在提交任务...');
+                
+                try {
+                    const response = await fetch('/api/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ python_code: this.lastGeneratedCode })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.showMessage(`任务 ${data.task_id.substring(0,8)}... 已提交`, 'info');
+                        this.pollTaskStatus(data.task_id); // 开始轮询
+                    } else {
+                        this.showMessage(`❌ 提交失败: ${data.error}`, 'error');
+                        this.setRunButtonLoading(false);
+                    }
+                } catch (error) {
+                    this.showMessage(`❌ 网络错误: ${error.message}`, 'error');
+                    this.setRunButtonLoading(false);
+                }
+            }
+            
+            pollTaskStatus(taskId) {
+                const intervalId = setInterval(async () => {
+                    try {
+                        const response = await fetch(`/api/task_status/${taskId}`);
+                        if (!response.ok) {
+                           throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const status = data.status.status;
+                            const statusMap = {
+                                'pending': '排队中...',
+                                'running': '正在生成3D模型...',
+                                'completed': '🎉 模型生成成功！',
+                                'failed': '❌ 运行失败'
+                            };
+                            
+                            this.showMessage(statusMap[status] || '未知状态', 'info');
+                            this.setRunButtonLoading(true, statusMap[status]);
+
+                            if (status === 'completed') {
+                                clearInterval(intervalId);
+                                this.setRunButtonLoading(false);
+                                if (data.status.has_3d_model) {
+                                    this.load3DModel(data.status.model_url);
+                                    this.setupDownload(data.status.download_url);
+                                }
+                            } else if (status === 'failed') {
+                                clearInterval(intervalId);
+                                this.setRunButtonLoading(false);
+                                this.showMessage(`❌ 运行失败: ${data.status.error}`, 'error');
+                            }
+                        } else {
+                           throw new Error(data.error || '无法获取任务状态');
+                        }
+                    } catch (error) {
+                        clearInterval(intervalId);
+                        this.showMessage(`❌ 轮询错误: ${error.message}`, 'error');
+                        this.setRunButtonLoading(false);
+                    }
+                }, 2000); // 每2秒查询一次
+            }
+            
+            setRunButtonLoading(loading, text = 'Run') {
+                this.runCodeBtn.disabled = loading;
+                if (loading) {
+                    this.runCodeBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${text}`;
+                } else {
+                    this.runCodeBtn.innerHTML = '<i class="fas fa-play"></i> Run';
+                }
+            }
+            
+            async refreshCode() {
+                if (!this.lastPrompt) {
+                    this.showMessage('没有可刷新的内容，请先生成代码', 'error');
+                    return;
+                }
+                
+                this.showMessage('正在重新生成代码...', 'info');
+                
+                // 重新使用上次的 prompt 生成代码
+                this.setLoading(true);
+                this.clearMessage();
+                
+                try {
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: this.lastPrompt
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.lastGeneratedCode = data.python_code;
+                        this.displayCode(data.python_code);
+                        // this.displayApiResponse(data.override_data);  // 已隐藏API response显示
+                        this.showMessage('代码刷新成功！', 'success');
+                    } else {
+                        this.showMessage('刷新失败: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('网络错误: ' + error.message, 'error');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+            
+            displayCode(code) {
+                if (code) {
+                    this.codeContent.innerHTML = `
+                        <pre><code class="language-python">${this.escapeHtml(code)}</code></pre>
+                    `;
+                    // 应用语法高亮
+                    Prism.highlightAllUnder(this.codeContent);
+                    // 显示操作按钮
+                    this.copyBtn.style.display = 'block';
+                    this.refreshBtn.style.display = 'flex';
+                    this.runCodeBtn.style.display = 'flex';
+                    this.copyBtn.dataset.code = code;
+                } else {
+                    // 如果没有代码，显示占位符
+                    this.codeContent.innerHTML = `
+                        <div class="placeholder-text">
+                            <i class="fas fa-code" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                        </div>
+                    `;
+                    // 隐藏相关按钮
+                    this.copyBtn.style.display = 'none';
+                    this.refreshBtn.style.display = 'none';
+                    this.runCodeBtn.style.display = 'none';
+                }
+            }
+            
+            async copyCode() {
+                const code = this.copyBtn.dataset.code;
+                if (!code) return;
+                
+                try {
+                    await navigator.clipboard.writeText(code);
+                    
+                    // 更改按钮文本和图标
+                    const originalHTML = this.copyBtn.innerHTML;
+                    this.copyBtn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+                    this.copyBtn.style.background = '#38a169';
+                    
+                    setTimeout(() => {
+                        this.copyBtn.innerHTML = originalHTML;
+                        this.copyBtn.style.background = '#4facfe';
+                    }, 2000);
+                    
+                } catch (error) {
+                    this.showMessage('复制失败: ' + error.message, 'error');
+                }
+            }
+            
+            setLoading(loading) {
+                if (loading) {
+                    this.generateBtn.disabled = true;
+                    this.runCodeBtn.disabled = true;
+                    this.copyBtn.disabled = true;
+                    this.clearBtn.disabled = true;
+                    this.refreshBtn.disabled = true;
+                    this.runCodeBtn.style.display = 'none';
+                    this.checkConnBtn.disabled = true;
+                    this.generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+                    
+                    this.codeContent.innerHTML = `
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>正在生成代码，请稍候...</p>
+                        </div>
+                    `;
+                    this.copyBtn.style.display = 'none';
+                    this.refreshBtn.style.display = 'none';
+                } else {
+                    this.generateBtn.disabled = false;
+                    this.runCodeBtn.disabled = false;
+                    this.copyBtn.disabled = false;
+                    this.clearBtn.disabled = false;
+                    this.refreshBtn.disabled = false;
+                    this.runCodeBtn.style.display = 'flex';
+                    this.checkConnBtn.disabled = false;
+                    this.generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Code';
+                }
+            }
+            
+            showMessage(message, type) {
+                this.messageArea.innerHTML = `
+                    <div class="${type}">
+                        <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                        ${message}
+                    </div>
+                `;
+            }
+            
+            clearMessage() {
+                this.messageArea.innerHTML = '';
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            load3DModel(modelUrl) {
+                // 清空查看器
+                this.viewerContent.innerHTML = '';
+                
+                // 创建Three.js场景
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xf0f0f0);
+                
+                // 设置相机
+                const camera = new THREE.PerspectiveCamera(
+                    75, 
+                    this.viewerContent.offsetWidth / this.viewerContent.offsetHeight, 
+                    0.1, 
+                    1000
+                );
+                
+                // 创建渲染器
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(this.viewerContent.offsetWidth, this.viewerContent.offsetHeight);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.viewerContent.appendChild(renderer.domElement);
+                
+                // 添加光源
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 1).normalize();
+                directionalLight.castShadow = true;
+                scene.add(directionalLight);
+                
+                // 添加控制器
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.enableZoom = true;
+                
+                // 加载STL模型
+                const loader = new THREE.STLLoader();
+                loader.load(modelUrl, (geometry) => {
+                    console.log("STL-LOADER: Success! Geometry loaded.");
+                    
+                    // 计算几何中心
+                    geometry.computeBoundingBox();
+                    const center = new THREE.Vector3();
+                    geometry.boundingBox.getCenter(center);
+                    geometry.translate(-center.x, -center.y, -center.z);
+                    
+                    const material = new THREE.MeshPhongMaterial({
+                        color: 0x4facfe,
+                        shininess: 100,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    scene.add(mesh);
+                    
+                    // 设置相机位置
+                    const box = new THREE.Box3().setFromObject(mesh);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                    cameraZ *= 2; 
+                    
+                    console.log("3D-VIEWER-DEBUG:", {
+                        objectSize: size,
+                        maxDimension: maxDim,
+                        cameraZ: cameraZ,
+                        cameraPosition: { x: cameraZ, y: cameraZ, z: cameraZ }
+                    });
+                    
+                    camera.position.set(cameraZ, cameraZ, cameraZ);
+                    camera.lookAt(0, 0, 0);
+                    
+                    // 渲染循环
+                    const animate = () => {
+                        requestAnimationFrame(animate);
+                        controls.update();
+                        renderer.render(scene, camera);
+                    };
+                    animate();
+                    
+                    const handleResize = () => {
+                        const width = this.viewerContent.clientWidth;
+                        const height = this.viewerContent.clientHeight;
+                        console.log(`3D-VIEWER-DEBUG: Resizing to ${width}x${height}`);
+                        camera.aspect = width / height;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(width, height);
+                    };
+                    window.addEventListener('resize', handleResize);
+                    handleResize(); // Initial call
+                    
+                }, 
+                (xhr) => {
+                    console.log(`STL-LOADER: ${(xhr.loaded / xhr.total * 100).toFixed(2)}% loaded`);
+                },
+                (error) => {
+                    console.error('3D-VIEWER-ERROR: STL loading failed:', error);
+                    this.showMessage('3D模型加载失败，请检查浏览器控制台获取详细信息。', 'error');
+                });
+            }
+            
+            setupDownload(downloadUrl) {
+                this.downloadBtn.style.display = 'flex';
+                this.downloadBtn.onclick = () => {
+                    window.open(downloadUrl, '_blank');
+                };
+            }
+            
+            async checkApiConnection() {
+                this.clearMessage();
+                this.showMessage('正在测试与LLaMA Factory的连接...', 'info');
+                
+                this.checkConnBtn.disabled = true;
+                this.checkConnBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+                
+                try {
+                    const response = await fetch('/api/check_connection', { method: 'POST' });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.showMessage('✅ 连接成功！LLaMA Factory API 可正常访问。', 'success');
+                    } else {
+                        this.showMessage(`❌ ${data.error}`, 'error');
+                    }
+                } catch (error) {
+                    this.showMessage(`❌ 网络错误: ${error.message}`, 'error');
+                } finally {
+                    this.checkConnBtn.disabled = false;
+                    this.checkConnBtn.innerHTML = '<i class="fas fa-wifi"></i> Check Connection';
+                }
+            }
+            
+            displayApiResponse(data) {
+                this.apiResponseContainer.style.display = 'block';
+                this.apiResponseContent.textContent = JSON.stringify(data, null, 2);
+            }
+            
+            clearAll() {
+                this.promptInput.value = '';
+                this.codeContent.innerHTML = `
+                    <div class="placeholder-text">
+                        <i class="fas fa-code" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                    </div>
+                `;
+                this.viewerContent.innerHTML = `
+                    <div class="placeholder-text">
+                        <i class="fas fa-cube" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.3;"></i>
+                    </div>
+                `;
+                this.copyBtn.style.display = 'none';
+                this.refreshBtn.style.display = 'none';
+                this.runCodeBtn.style.display = 'none';
+                this.downloadBtn.style.display = 'none';
+                this.clearMessage();
+                this.lastPrompt = '';
+                this.lastGeneratedCode = '';
+                this.apiResponseContainer.style.display = 'none';
+                this.showMessage('已清空所有内容', 'info');
+            }
+        }
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            new CodeGenerator();
+        });
+    </script>
+</body>
+</html> 
